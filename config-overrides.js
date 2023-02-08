@@ -1,23 +1,33 @@
-var webpack = require('webpack');
-var path = require('path');
+const webpack = require("webpack");
 
-module.exports = function override(config, env) {
-    config.resolve.fallback = {
-        "stream": require.resolve("stream-browserify"),
-        "path": require.resolve("path-browserify"),
-        "crypto": require.resolve("crypto-browserify"),
-        "buffer": require.resolve("buffer/")
-    };
-    config.resolve.aliasFields = ["browser"];
-    config.module.rules.push({
-        test: /\.m?js$/,
-        resolve: {
-            fullySpecified: false,
-        }
-    });
-    config.plugins.push(new webpack.ProvidePlugin({
-        Buffer: ['buffer', 'Buffer'],
-    }));
-    return config;
+module.exports = function override(config) {
+  const fallback = config.resolve.fallback || {};
+  Object.assign(fallback, {
+    crypto: require.resolve("crypto-browserify"),
+    stream: require.resolve("stream-browserify"),
+    assert: require.resolve("assert"),
+    http: require.resolve("stream-http"),
+    https: require.resolve("https-browserify"),
+    os: require.resolve("os-browserify"),
+    url: require.resolve("url"),
+    path: require.resolve("path-browserify"),
+  });
+  config.resolve.fallback = fallback;
+  config.plugins = (config.plugins || []).concat([
+    new webpack.ProvidePlugin({
+      process: "process/browser",
+      Buffer: ["buffer", "Buffer"],
+    }),
+  ]);
+  config.ignoreWarnings = [/Failed to parse source map/];
+  config.module.rules.push({
+    test: /\.(js|mjs|jsx)$/,
+    enforce: "pre",
+    loader: require.resolve("source-map-loader"),
+    resolve: {
+      fullySpecified: false,
+    },
+  });
+  return config;
 };
 
